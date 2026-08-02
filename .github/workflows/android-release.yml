@@ -25,11 +25,18 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.12'
           validate-wrappers: false
+
+      - name: Make Gradlew Executable and Fix Line Endings
+        run: |
+          sed -i -e 's/\r$//' gradlew
+          chmod +x gradlew
 
       - name: Prepare Environment & Keystore
         run: |
@@ -55,7 +62,7 @@ jobs:
           cp debug.keystore ~/.android/debug.keystore || true
 
       - name: Build Android APK
-        run: gradle assembleDebug --stacktrace
+        run: ./gradlew assembleDebug --stacktrace
 
       - name: Locate Generated APK
         id: find_apk
