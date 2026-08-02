@@ -1,0 +1,6 @@
+{
+  "name": "AetherOS",
+  "description": "Autonomous multi-worker orchestration system featuring Kernel mission control, 7 specialized workers, daily pipelines, trend analytics, and social media publishing.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
