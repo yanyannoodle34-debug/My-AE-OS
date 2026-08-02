@@ -32,12 +32,11 @@ jobs:
 
       - name: Prepare Environment & Keystore
         run: |
-          # Ensure .env file exists for secrets plugin
-          if [ -f .env.example ]; then
-            cp .env.example .env
-          else
-            touch .env
-          fi
+          # Create placeholder .env file so secrets gradle plugin passes without requiring CI secrets.
+          # API keys are configured directly inside the app by the user.
+          echo "GEMINI_API_KEY=PLACEHOLDER_KEY" > .env
+          echo "NVIDIA_API_KEY=PLACEHOLDER_KEY" >> .env
+          echo "OPENROUTER_API_KEY=PLACEHOLDER_KEY" >> .env
 
           # Setup debug keystore if not present
           mkdir -p ~/.android
