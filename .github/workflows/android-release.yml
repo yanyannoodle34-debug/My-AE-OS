@@ -26,9 +26,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: '8.12'
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Prepare Environment & Keystore
         run: |
@@ -52,8 +50,11 @@ jobs:
           mkdir -p ~/.android
           cp debug.keystore ~/.android/debug.keystore || true
 
+      - name: Make Gradlew Executable
+        run: chmod +x gradlew
+
       - name: Build Android APK
-        run: gradle assembleDebug --stacktrace
+        run: ./gradlew assembleDebug --stacktrace
 
       - name: Locate Generated APK
         id: find_apk
