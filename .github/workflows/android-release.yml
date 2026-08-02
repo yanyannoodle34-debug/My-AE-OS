@@ -19,10 +19,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
 
       - name: Setup Gradle
@@ -39,14 +39,18 @@ jobs:
           echo "OPENROUTER_API_KEY=PLACEHOLDER_KEY" >> .env
 
           # Setup debug keystore if not present
-          mkdir -p ~/.android
           if [ -f debug.keystore.base64 ]; then
-            base64 --decode debug.keystore.base64 > ~/.android/debug.keystore || base64 -d debug.keystore.base64 > ~/.android/debug.keystore || true
-            cp ~/.android/debug.keystore ./debug.keystore || true
-          else
-            keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
-            cp ~/.android/debug.keystore ./debug.keystore || true
+            base64 --decode debug.keystore.base64 > debug.keystore || base64 -d debug.keystore.base64 > debug.keystore || openssl base64 -d -in debug.keystore.base64 -out debug.keystore || true
           fi
+
+          if [ ! -f debug.keystore ] || [ ! -s debug.keystore ]; then
+            echo "Generating new debug.keystore..."
+            keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          fi
+
+          # Sync to default user android folder just in case
+          mkdir -p ~/.android
+          cp debug.keystore ~/.android/debug.keystore || true
 
       - name: Build Android APK
         run: gradle assembleDebug --stacktrace
@@ -73,8 +77,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: ${{ env.APK_PATH }}
-          name: AetherOS Release (${{ github.sha }})
-          tag_name: release-${{ github.sha }}
+          name: ${{ startsWith(github.ref, 'refs/tags/') && format('AetherOS Release {0}', github.ref_name) || format('AetherOS Build ({0})', github.sha) }}
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('release-{0}', github.sha) }}
           draft: false
           prerelease: false
           body: |
