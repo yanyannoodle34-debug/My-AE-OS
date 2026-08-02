@@ -25,6 +25,17 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
+      - name: Regenerate / Download Gradle Wrapper to Prevent Corruption
+        run: |
+          if command -v gradle &> /dev/null; then
+            echo "Using system gradle to regenerate wrapper..."
+            gradle wrapper --gradle-version 8.12
+          else
+            echo "System gradle not found, downloading validated wrapper jar..."
+            mkdir -p gradle/wrapper
+            wget -O gradle/wrapper/gradle-wrapper.jar https://raw.githubusercontent.com/gradle/gradle/v8.12.0/gradle/wrapper/gradle-wrapper.jar || curl -Lo gradle/wrapper/gradle-wrapper.jar https://raw.githubusercontent.com/gradle/gradle/v8.12.0/gradle/wrapper/gradle-wrapper.jar
+          fi
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
