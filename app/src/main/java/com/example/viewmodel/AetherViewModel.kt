@@ -3,6 +3,7 @@ package com.example.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.BuildConfig
 import com.example.data.*
 import com.example.data.db.AetherDatabase
 import com.example.data.db.AetherRepository
@@ -53,7 +54,28 @@ class AetherViewModel(application: Application) : AndroidViewModel(application) 
     private val _kernelActive = MutableStateFlow(true)
     private val _dailyPipelineEnabled = MutableStateFlow(true)
     private val _activeMission = MutableStateFlow<Mission?>(null)
-    private val _fbCredentials = MutableStateFlow(FacebookCredentials())
+
+    private fun hasEnvValue(value: String?, defaultPlaceholder: String): Boolean {
+        return !value.isNullOrBlank() && value != defaultPlaceholder && !value.startsWith("YOUR_")
+    }
+
+    private fun getEnvOrDemo(envValue: String?, defaultPlaceholder: String, demoValue: String): String {
+        return if (hasEnvValue(envValue, defaultPlaceholder)) {
+            envValue!!
+        } else {
+            demoValue
+        }
+    }
+
+    private val _fbCredentials = MutableStateFlow(
+        FacebookCredentials(
+            pageName = getEnvOrDemo(BuildConfig.FACEBOOK_PAGE_NAME, "YOUR_FACEBOOK_PAGE_NAME", "We Share We Care"),
+            pageId = getEnvOrDemo(BuildConfig.FACEBOOK_PAGE_ID, "YOUR_FACEBOOK_PAGE_ID", "1092837492019482"),
+            apiVersion = "v22.0",
+            accessToken = getEnvOrDemo(BuildConfig.FACEBOOK_ACCESS_TOKEN, "YOUR_FACEBOOK_ACCESS_TOKEN", "EAAG...m9ZAZB9x2Y10P"),
+            status = if (hasEnvValue(BuildConfig.FACEBOOK_ACCESS_TOKEN, "YOUR_FACEBOOK_ACCESS_TOKEN")) "Connected Securely (Env)" else "Demo Mode (Autofilled)"
+        )
+    )
 
     private val _directorConfig = MutableStateFlow(DirectorAgentConfig())
     private val _isSplittingVideo = MutableStateFlow(false)
@@ -68,10 +90,10 @@ class AetherViewModel(application: Application) : AndroidViewModel(application) 
                 description = "NVIDIA Build Free API Key for Llama 3.1 70B & Nemotron",
                 badge = "NVIDIA FREE API",
                 isFreeTier = true,
-                apiKey = "nvapi-free_demo_key_9928341",
+                apiKey = getEnvOrDemo(BuildConfig.NVIDIA_API_KEY, "YOUR_NVIDIA_API_KEY", "nvapi-free_demo_key_9928341"),
                 selectedModel = "meta/llama-3.1-70b-instruct",
                 availableModels = listOf("meta/llama-3.1-70b-instruct", "nvidia/nemotron-4-340b-instruct", "mistralai/mixtral-8x22b-instruct"),
-                status = "Connected (10,000 Free Credits)",
+                status = if (hasEnvValue(BuildConfig.NVIDIA_API_KEY, "YOUR_NVIDIA_API_KEY")) "Connected Securely (Env)" else "Connected (10,000 Free Credits)",
                 endpointUrl = "https://integrate.api.nvidia.com/v1"
             ),
             AiAgentProvider(
@@ -80,10 +102,10 @@ class AetherViewModel(application: Application) : AndroidViewModel(application) 
                 description = "Universal LLM Gateway supporting DeepSeek R1, Claude, Llama 3.3",
                 badge = "OPENROUTER API",
                 isFreeTier = true,
-                apiKey = "sk-or-v1-9283741029384",
+                apiKey = getEnvOrDemo(BuildConfig.OPENROUTER_API_KEY, "YOUR_OPENROUTER_API_KEY", "sk-or-v1-9283741029384"),
                 selectedModel = "deepseek/deepseek-r1",
                 availableModels = listOf("openrouter/auto", "deepseek/deepseek-r1", "anthropic/claude-3.5-sonnet", "meta-llama/llama-3.3-70b-instruct"),
-                status = "Connected & Active",
+                status = if (hasEnvValue(BuildConfig.OPENROUTER_API_KEY, "YOUR_OPENROUTER_API_KEY")) "Connected Securely (Env)" else "Connected & Active",
                 endpointUrl = "https://openrouter.ai/api/v1"
             ),
             AiAgentProvider(
@@ -92,10 +114,10 @@ class AetherViewModel(application: Application) : AndroidViewModel(application) 
                 description = "Google Gemini 2.0 Flash & 1.5 Pro high-speed multi-modal agent",
                 badge = "GEMINI API",
                 isFreeTier = true,
-                apiKey = "AIzaSy_demo_gemini_key_88291",
+                apiKey = getEnvOrDemo(BuildConfig.GEMINI_API_KEY, "YOUR_GEMINI_API_KEY", "AIzaSy_demo_gemini_key_88291"),
                 selectedModel = "gemini-2.0-flash",
                 availableModels = listOf("gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"),
-                status = "Connected (Free Tier Active)",
+                status = if (hasEnvValue(BuildConfig.GEMINI_API_KEY, "YOUR_GEMINI_API_KEY")) "Connected Securely (Env)" else "Connected (Free Tier Active)",
                 endpointUrl = "https://generativelanguage.googleapis.com"
             ),
             AiAgentProvider(
@@ -104,10 +126,10 @@ class AetherViewModel(application: Application) : AndroidViewModel(application) 
                 description = "DeepSeek V3 Chat & DeepSeek R1 Reasoning LLM Endpoints",
                 badge = "DEEPSEEK API",
                 isFreeTier = true,
-                apiKey = "sk-deepseek-demo-992831",
+                apiKey = getEnvOrDemo(BuildConfig.DEEPSEEK_API_KEY, "YOUR_DEEPSEEK_API_KEY", "sk-deepseek-demo-992831"),
                 selectedModel = "deepseek-reasoner",
                 availableModels = listOf("deepseek-chat", "deepseek-reasoner"),
-                status = "Connected & Active",
+                status = if (hasEnvValue(BuildConfig.DEEPSEEK_API_KEY, "YOUR_DEEPSEEK_API_KEY")) "Connected Securely (Env)" else "Connected & Active",
                 endpointUrl = "https://api.deepseek.com/v1"
             )
         )
@@ -144,6 +166,24 @@ class AetherViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             // Seed initial catalogue & trends if DB empty
             seedInitialDataIfNeeded()
+
+            // Log secure environment key statuses on start
+            delay(500) // slight delay to ensure first rendering logger sees it
+            if (hasEnvValue(BuildConfig.GEMINI_API_KEY, "YOUR_GEMINI_API_KEY")) {
+                logEvent("KERNEL", "Google Gemini API Key securely loaded from AI Studio Secrets.")
+            }
+            if (hasEnvValue(BuildConfig.NVIDIA_API_KEY, "YOUR_NVIDIA_API_KEY")) {
+                logEvent("KERNEL", "NVIDIA API Key securely loaded from AI Studio Secrets.")
+            }
+            if (hasEnvValue(BuildConfig.OPENROUTER_API_KEY, "YOUR_OPENROUTER_API_KEY")) {
+                logEvent("KERNEL", "OpenRouter API Key securely loaded from AI Studio Secrets.")
+            }
+            if (hasEnvValue(BuildConfig.DEEPSEEK_API_KEY, "YOUR_DEEPSEEK_API_KEY")) {
+                logEvent("KERNEL", "DeepSeek API Key securely loaded from AI Studio Secrets.")
+            }
+            if (hasEnvValue(BuildConfig.FACEBOOK_ACCESS_TOKEN, "YOUR_FACEBOOK_ACCESS_TOKEN")) {
+                logEvent("PUBLISH", "Facebook Page Access Token securely loaded from AI Studio Secrets.")
+            }
         }
 
         // Add welcome CLI banner

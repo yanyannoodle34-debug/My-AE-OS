@@ -4,9 +4,11 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -69,25 +71,21 @@ fun AiAgentsConfigScreen(
     ) {
         // Page Header
         item {
-            Column {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
-                        Text(
-                            text = "AI Agents & Director Engine",
-                            color = ImmersiveTextPrimary,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "Manage AI Director Agent • 9:16 Facebook Reels Policy • 500MB Splitter • LLM APIs",
-                            color = ImmersiveTextMuted,
-                            fontSize = 12.sp
-                        )
-                    }
+                    Text(
+                        text = "AI Agents & Director Engine",
+                        color = ImmersiveTextPrimary,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
 
                     Button(
                         onClick = onAutofillFreeKeys,
@@ -99,6 +97,53 @@ fun AiAgentsConfigScreen(
                         Icon(Icons.Default.AutoFixHigh, contentDescription = null, modifier = Modifier.size(14.dp))
                         Spacer(modifier = Modifier.width(6.dp))
                         Text("Autofill Free Keys", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+                Text(
+                    text = "Manage AI Director Agent • 9:16 Facebook Reels Policy • 500MB Splitter • LLM APIs",
+                    color = ImmersiveTextMuted,
+                    fontSize = 11.sp,
+                    lineHeight = 15.sp
+                )
+
+                val isSecureConfigActive = providers.any { it.status.contains("Securely") || (!it.apiKey.contains("demo") && !it.apiKey.contains("free") && it.apiKey.isNotBlank()) }
+                Surface(
+                    color = if (isSecureConfigActive) AetherEmerald.copy(alpha = 0.08f) else AetherAmber.copy(alpha = 0.08f),
+                    shape = RoundedCornerShape(12.dp),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        if (isSecureConfigActive) AetherEmerald.copy(alpha = 0.25f) else AetherAmber.copy(alpha = 0.25f)
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isSecureConfigActive) Icons.Default.LockOpen else Icons.Default.Info,
+                            contentDescription = null,
+                            tint = if (isSecureConfigActive) AetherEmerald else AetherAmber,
+                            modifier = Modifier.size(18.dp)
+                        )
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = if (isSecureConfigActive) "Secure Environment Config Active" else "Demo Sandbox Mode",
+                                color = ImmersiveTextPrimary,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = if (isSecureConfigActive)
+                                    "Your API keys and credentials are synchronized securely via AI Studio Secrets."
+                                    else "Running with local simulated keys. Add real keys securely in the Secrets panel in AI Studio.",
+                                color = ImmersiveTextSecondary,
+                                fontSize = 11.sp,
+                                lineHeight = 15.sp
+                            )
+                        }
                     }
                 }
             }
@@ -171,7 +216,9 @@ fun AiAgentsConfigScreen(
 
                     // Capabilities & Policy Badges
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Surface(
@@ -438,34 +485,38 @@ fun AiAgentsConfigScreen(
                         fontSize = 12.sp
                     )
 
-                    Row(
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        providers.forEach { provider ->
-                            val isSelected = provider.id == defaultProviderId
-                            OutlinedButton(
-                                onClick = { onSetDefaultProvider(provider.id) },
-                                modifier = Modifier.weight(1f).testTag("select_default_provider_${provider.id}"),
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    containerColor = if (isSelected) AetherIndigo.copy(alpha = 0.25f) else Color.Transparent,
-                                    contentColor = if (isSelected) AetherCyan else ImmersiveTextPrimary
-                                ),
-                                border = androidx.compose.foundation.BorderStroke(
-                                    1.dp,
-                                    if (isSelected) AetherCyan else ImmersiveCardBorder
-                                ),
-                                shape = RoundedCornerShape(8.dp),
-                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
-                            ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text(provider.badge, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                    Text(
-                                        text = if (isSelected) "PRIMARY" else "Select",
-                                        fontSize = 9.sp,
-                                        color = if (isSelected) AetherEmerald else ImmersiveTextMuted
-                                    )
-                                }
+                        // First Row of 2
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            providers.take(2).forEach { provider ->
+                                val isSelected = provider.id == defaultProviderId
+                                OrchestratorSelectorItem(
+                                    provider = provider,
+                                    isSelected = isSelected,
+                                    onSelect = { onSetDefaultProvider(provider.id) },
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                        }
+                        // Second Row of 2
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            providers.drop(2).forEach { provider ->
+                                val isSelected = provider.id == defaultProviderId
+                                OrchestratorSelectorItem(
+                                    provider = provider,
+                                    isSelected = isSelected,
+                                    onSelect = { onSetDefaultProvider(provider.id) },
+                                    modifier = Modifier.weight(1f)
+                                )
                             }
                         }
                     }
@@ -570,7 +621,9 @@ fun AiAgentsConfigScreen(
                             // Provider Selector for Test
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState())
                             ) {
                                 providers.forEach { provider ->
                                     val isSelected = provider.id == selectedTestProviderId
@@ -701,52 +754,12 @@ fun AiAgentsConfigScreen(
 
                             WorkerType.values().forEach { worker ->
                                 val assignedProviderId = workerProviderMap[worker] ?: defaultProviderId
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(ImmersiveBackground)
-                                        .border(1.dp, ImmersiveCardBorder, RoundedCornerShape(8.dp))
-                                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column(modifier = Modifier.weight(0.55f)) {
-                                        Text(worker.title, color = ImmersiveTextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                                        Text(worker.role, color = ImmersiveTextMuted, fontSize = 10.sp)
-                                    }
-
-                                    Row(
-                                        modifier = Modifier.weight(0.45f),
-                                        horizontalArrangement = Arrangement.End,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        providers.forEach { p ->
-                                            val isSelected = p.id == assignedProviderId
-                                            Box(
-                                                modifier = Modifier
-                                                    .padding(horizontal = 2.dp)
-                                                    .clip(RoundedCornerShape(4.dp))
-                                                    .background(if (isSelected) AetherIndigo else Color.Transparent)
-                                                    .border(1.dp, if (isSelected) AetherIndigo else ImmersiveCardBorder, RoundedCornerShape(4.dp))
-                                                    .padding(horizontal = 6.dp, vertical = 3.dp)
-                                            ) {
-                                                TextButton(
-                                                    onClick = { onAssignWorkerProvider(worker, p.id) },
-                                                    contentPadding = PaddingValues(0.dp),
-                                                    modifier = Modifier.height(18.dp)
-                                                ) {
-                                                    Text(
-                                                        text = p.badge,
-                                                        fontSize = 9.sp,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = if (isSelected) Color.White else ImmersiveTextMuted
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
+                                WorkerProviderRow(
+                                    worker = worker,
+                                    assignedProviderId = assignedProviderId,
+                                    providers = providers,
+                                    onAssignWorkerProvider = onAssignWorkerProvider
+                                )
                             }
                         }
                     }
@@ -935,34 +948,204 @@ private fun ProviderConfigCard(
                     }
 
                     // Save and Test Action
-                    Row(
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         if (provider.isFreeTier) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.CardGiftcard, contentDescription = null, tint = AetherEmerald, modifier = Modifier.size(14.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("FREE TIER AVAILABLE", color = AetherEmerald, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            Surface(
+                                color = AetherEmerald.copy(alpha = 0.12f),
+                                shape = RoundedCornerShape(8.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, AetherEmerald.copy(alpha = 0.3f)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(Icons.Default.CardGiftcard, contentDescription = null, tint = AetherEmerald, modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("FREE REASONING TIER INSTANTLY AVAILABLE", color = AetherEmerald, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
                             }
-                        } else {
-                            Spacer(modifier = Modifier.width(1.dp))
                         }
 
                         Button(
                             onClick = onQuickTest,
                             colors = ButtonDefaults.buttonColors(containerColor = providerColor, contentColor = Color.Black),
                             shape = RoundedCornerShape(8.dp),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                            modifier = Modifier.testTag("verify_key_button_${provider.id}")
+                            modifier = Modifier.fillMaxWidth().height(44.dp).testTag("verify_key_button_${provider.id}")
                         ) {
-                            Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Verify & Save Key", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                            Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Verify & Save ${provider.name} Key", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun WorkerProviderRow(
+    worker: WorkerType,
+    assignedProviderId: String,
+    providers: List<AiAgentProvider>,
+    onAssignWorkerProvider: (WorkerType, String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val assignedProvider = providers.find { it.id == assignedProviderId }
+    val assignedBadge = assignedProvider?.badge ?: assignedProviderId.uppercase()
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(ImmersiveBackground)
+            .border(1.dp, ImmersiveCardBorder, RoundedCornerShape(12.dp))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(0.55f)) {
+            Text(worker.title, color = ImmersiveTextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            Text(worker.role, color = ImmersiveTextMuted, fontSize = 10.sp)
+        }
+
+        Box(
+            modifier = Modifier.weight(0.45f),
+            contentAlignment = Alignment.CenterEnd
+        ) {
+            Surface(
+                onClick = { expanded = true },
+                color = ImmersiveSurfaceVariant,
+                shape = RoundedCornerShape(8.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, if (expanded) AetherIndigo else ImmersiveCardBorder),
+                modifier = Modifier.testTag("worker_provider_select_${worker.name}")
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = assignedBadge,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AetherCyan
+                    )
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = "Select provider dropdown",
+                        tint = ImmersiveTextMuted,
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+            }
+
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.background(ImmersiveSurface).border(1.dp, ImmersiveCardBorder, RoundedCornerShape(8.dp))
+            ) {
+                providers.forEach { provider ->
+                    DropdownMenuItem(
+                        text = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                val providerColor = when (provider.id) {
+                                    "nvidia" -> AetherEmerald
+                                    "openrouter" -> AetherPink
+                                    "gemini" -> AetherCyan
+                                    "deepseek" -> AetherIndigo
+                                    else -> AetherCyan
+                                }
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(providerColor.copy(alpha = 0.2f))
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        provider.badge,
+                                        color = providerColor,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                Text(provider.name, color = ImmersiveTextPrimary, fontSize = 12.sp)
+                            }
+                        },
+                        onClick = {
+                            onAssignWorkerProvider(worker, provider.id)
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun OrchestratorSelectorItem(
+    provider: AiAgentProvider,
+    isSelected: Boolean,
+    onSelect: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val providerColor = when (provider.id) {
+        "nvidia" -> AetherEmerald
+        "openrouter" -> AetherPink
+        "gemini" -> AetherCyan
+        "deepseek" -> AetherIndigo
+        else -> AetherCyan
+    }
+
+    Surface(
+        onClick = onSelect,
+        color = if (isSelected) providerColor.copy(alpha = 0.12f) else ImmersiveBackground,
+        shape = RoundedCornerShape(12.dp),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            if (isSelected) providerColor else ImmersiveCardBorder
+        ),
+        modifier = modifier.height(56.dp).testTag("select_default_provider_${provider.id}")
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .clip(androidx.compose.foundation.shape.CircleShape)
+                    .background(if (isSelected) providerColor else ImmersiveTextMuted)
+            )
+
+            Column(
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = provider.badge,
+                    color = if (isSelected) providerColor else ImmersiveTextPrimary,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1
+                )
+                Text(
+                    text = if (isSelected) "PRIMARY ACTIVE" else "Tap to Select",
+                    color = if (isSelected) AetherEmerald else ImmersiveTextMuted,
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1
+                )
             }
         }
     }

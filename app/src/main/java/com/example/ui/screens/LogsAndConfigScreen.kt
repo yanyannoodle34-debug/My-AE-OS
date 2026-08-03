@@ -65,16 +65,16 @@ fun LogsAndConfigScreen(
     ) {
         // Header
         item {
-            Column {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
-                        Text("Logs & System Configuration", color = ImmersiveTextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                        Text("Facebook Graph API v22.0 Settings & Live Test Suite", color = ImmersiveTextMuted, fontSize = 12.sp)
-                    }
+                    Text("Logs & System Configuration", color = ImmersiveTextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
 
                     Box(
                         modifier = Modifier
@@ -84,6 +84,48 @@ fun LogsAndConfigScreen(
                             .padding(horizontal = 10.dp, vertical = 6.dp)
                     ) {
                         Text("v22.0 GRAPH API", color = AetherIndigo, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+                Text("Facebook Graph API v22.0 Settings & Live Test Suite", color = ImmersiveTextMuted, fontSize = 12.sp)
+
+                val isSecureConfigActive = fbCredentials.status.contains("Securely") || (!fbCredentials.accessToken.contains("EAAG...m9ZAZB9x2Y10P") && fbCredentials.accessToken.isNotBlank())
+                Surface(
+                    color = if (isSecureConfigActive) AetherEmerald.copy(alpha = 0.08f) else AetherAmber.copy(alpha = 0.08f),
+                    shape = RoundedCornerShape(12.dp),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        if (isSecureConfigActive) AetherEmerald.copy(alpha = 0.25f) else AetherAmber.copy(alpha = 0.25f)
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isSecureConfigActive) Icons.Default.LockOpen else Icons.Default.Info,
+                            contentDescription = null,
+                            tint = if (isSecureConfigActive) AetherEmerald else AetherAmber,
+                            modifier = Modifier.size(18.dp)
+                        )
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = if (isSecureConfigActive) "Secure Facebook Credentials Handshake Active" else "Demo Sandbox Mode",
+                                color = ImmersiveTextPrimary,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = if (isSecureConfigActive)
+                                    "Facebook Page ID and Access Token are synchronized securely via AI Studio Secrets."
+                                    else "Running with local simulated credentials. Add real Facebook Page credentials securely in the Secrets panel in AI Studio.",
+                                color = ImmersiveTextSecondary,
+                                fontSize = 11.sp,
+                                lineHeight = 15.sp
+                            )
+                        }
                     }
                 }
             }
@@ -186,59 +228,56 @@ fun LogsAndConfigScreen(
                                 modifier = Modifier.fillMaxWidth().testTag("fb_page_id_input")
                             )
 
-                            // Graph API Version & Access Token Row
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                OutlinedTextField(
-                                    value = editApiVersion,
-                                    onValueChange = { editApiVersion = it },
-                                    label = { Text("API Version") },
-                                    singleLine = true,
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        focusedBorderColor = AetherCyan,
-                                        unfocusedBorderColor = ImmersiveCardBorder,
-                                        focusedTextColor = ImmersiveTextPrimary,
-                                        unfocusedTextColor = ImmersiveTextPrimary,
-                                        focusedContainerColor = ImmersiveBackground,
-                                        unfocusedContainerColor = ImmersiveBackground
-                                    ),
-                                    modifier = Modifier.weight(0.35f).testTag("fb_api_version_input")
-                                )
+                            // Graph API Version Input
+                            OutlinedTextField(
+                                value = editApiVersion,
+                                onValueChange = { editApiVersion = it },
+                                label = { Text("Graph API Version") },
+                                leadingIcon = { Icon(Icons.Default.Settings, contentDescription = null, tint = AetherCyan) },
+                                singleLine = true,
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = AetherCyan,
+                                    unfocusedBorderColor = ImmersiveCardBorder,
+                                    focusedTextColor = ImmersiveTextPrimary,
+                                    unfocusedTextColor = ImmersiveTextPrimary,
+                                    focusedContainerColor = ImmersiveBackground,
+                                    unfocusedContainerColor = ImmersiveBackground
+                                ),
+                                modifier = Modifier.fillMaxWidth().testTag("fb_api_version_input")
+                            )
 
-                                OutlinedTextField(
-                                    value = editAccessToken,
-                                    onValueChange = { editAccessToken = it },
-                                    label = { Text("Page Access Token") },
-                                    leadingIcon = { Icon(Icons.Default.VpnKey, contentDescription = null, tint = AetherCyan) },
-                                    trailingIcon = {
-                                        IconButton(onClick = { tokenVisible = !tokenVisible }) {
-                                            Icon(
-                                                imageVector = if (tokenVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                                contentDescription = "Toggle token visibility",
-                                                tint = ImmersiveTextMuted
-                                            )
-                                        }
-                                    },
-                                    visualTransformation = if (tokenVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                                    singleLine = true,
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        focusedBorderColor = AetherCyan,
-                                        unfocusedBorderColor = ImmersiveCardBorder,
-                                        focusedTextColor = ImmersiveTextPrimary,
-                                        unfocusedTextColor = ImmersiveTextPrimary,
-                                        focusedContainerColor = ImmersiveBackground,
-                                        unfocusedContainerColor = ImmersiveBackground
-                                    ),
-                                    modifier = Modifier.weight(0.65f).testTag("fb_access_token_input")
-                                )
-                            }
+                            // Page Access Token Input
+                            OutlinedTextField(
+                                value = editAccessToken,
+                                onValueChange = { editAccessToken = it },
+                                label = { Text("Page Access Token") },
+                                leadingIcon = { Icon(Icons.Default.VpnKey, contentDescription = null, tint = AetherCyan) },
+                                trailingIcon = {
+                                    IconButton(onClick = { tokenVisible = !tokenVisible }) {
+                                        Icon(
+                                            imageVector = if (tokenVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                            contentDescription = "Toggle token visibility",
+                                            tint = ImmersiveTextMuted
+                                        )
+                                    }
+                                },
+                                visualTransformation = if (tokenVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                                singleLine = true,
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = AetherCyan,
+                                    unfocusedBorderColor = ImmersiveCardBorder,
+                                    focusedTextColor = ImmersiveTextPrimary,
+                                    unfocusedTextColor = ImmersiveTextPrimary,
+                                    focusedContainerColor = ImmersiveBackground,
+                                    unfocusedContainerColor = ImmersiveBackground
+                                ),
+                                modifier = Modifier.fillMaxWidth().testTag("fb_access_token_input")
+                            )
 
                             // Setup Action Buttons
-                            Row(
+                            Column(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Button(
                                     onClick = {
@@ -247,10 +286,10 @@ fun LogsAndConfigScreen(
                                     },
                                     colors = ButtonDefaults.buttonColors(containerColor = AetherCyan, contentColor = Color.Black),
                                     shape = RoundedCornerShape(8.dp),
-                                    modifier = Modifier.weight(1f).testTag("save_and_test_fb_button")
+                                    modifier = Modifier.fillMaxWidth().height(44.dp).testTag("save_and_test_fb_button")
                                 ) {
                                     Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))
-                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
                                     Text("Save & Test Connection", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                                 }
 
@@ -265,9 +304,11 @@ fun LogsAndConfigScreen(
                                     },
                                     border = androidx.compose.foundation.BorderStroke(1.dp, AetherIndigo),
                                     shape = RoundedCornerShape(8.dp),
-                                    modifier = Modifier.testTag("autofill_fb_credentials")
+                                    modifier = Modifier.fillMaxWidth().height(40.dp).testTag("autofill_fb_credentials")
                                 ) {
-                                    Text("Autofill Demo", color = AetherIndigo, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(14.dp), tint = AetherIndigo)
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Autofill Sandbox Demo Credentials", color = AetherIndigo, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
 
